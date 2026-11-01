@@ -1,0 +1,61 @@
+📊 1. Transaction Performance Analysis
+
+Problem Statement: Analyze monthly transactions by country and calculate: 
+✅ Total transactions
+ ✅ Approved transactions
+ ✅ Total transaction amount
+ ✅ Approved transaction amount
+
+select DATE_FORMAT(trans_date, '%Y-%m') AS month,
+country, 
+count(*) as trans_count,
+count(case when state = 'approved' then 1 end) as approved_count,
+sum(amount) as trans_total_amount,
+sum(case when state = 'approved' then amount else 0 end) as approved_total_amount
+from transactions
+group by month, country;
+
+
+🚚 2. First Order Immediate Delivery Percentage
+
+Problem Statement: Find the percentage of customers whose very first order was delivered on their preferred delivery date.
+
+with first_order as
+(select d.*
+from delivery d
+join
+(select customer_id, min(order_date) as early_order
+from delivery
+group by customer_id) f
+on f.customer_id = d.customer_id
+and f.early_order = d.order_date)
+
+select round(sum(case when order_date =  customer_pref_delivery_date then 1 else 0 end )*100/count(*),2)
+as  immediate_percentage
+from first_order
+
+
+🎮 3. Player Retention Analysis
+
+Problem Statement: Calculate the fraction of players who logged in again exactly one day after their first login.
+
+
+WITH first_login AS (
+    SELECT player_id, MIN(event_date) AS first_date
+    FROM Activity
+    GROUP BY player_id
+)
+SELECT 
+    ROUND(
+        SUM(
+            IF(
+                EXISTS (
+                    SELECT 1 
+                    FROM Activity a2
+                    WHERE a2.player_id = f.player_id
+                      AND a2.event_date = DATE_ADD(f.first_date, INTERVAL 1 DAY)
+                ), 1, 0
+            )
+        ) * 1.0 / COUNT(*), 2
+    ) AS fraction
+FROM first_login f;
